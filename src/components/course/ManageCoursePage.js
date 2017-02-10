@@ -4,8 +4,9 @@ import {bindActionCreators} from 'redux';
 import * as courseActions from '../../actions/courseActions';
 import CourseForm from './CourseForm';
 import toastr from 'toastr';
+import {authorsFormattedForDropdown} from '../../selectors/selectors';
 
-class ManageCoursesPage extends React.Component {
+export class ManageCoursePage extends React.Component {
   // Constructor initialise state and call bind functions to this context
   constructor(props, context) {
     super(props, context);
@@ -34,8 +35,26 @@ class ManageCoursesPage extends React.Component {
     return this.setState({course: course});
   }
 
+  courseFormIsValid() {
+    let formIsValid = true;
+    let errors = {};
+
+    if (this.state.course.title.length < 5) {
+      errors.title = 'Title must be at least 5 characters.';
+      formIsValid = false;
+    }
+
+    this.setState({errors: errors});
+    return formIsValid;
+  }
+
   saveCourse(event) {
     event.preventDefault();
+
+    if (!this.courseFormIsValid()) {
+      return;
+    }
+
     this.setState({saving: true});
     this.props.actions.saveCourse(this.state.course)
       .then(() => this.redirect())
@@ -65,17 +84,16 @@ class ManageCoursesPage extends React.Component {
 }
 
 // PropType validation
-ManageCoursesPage.propTypes = {
+ManageCoursePage.propTypes = {
   course: PropTypes.object.isRequired,
   authors: PropTypes.array.isRequired,
   actions: PropTypes.object.isRequired
 };
 
 // Pull in the React Router context so router is available on this.context.router
-ManageCoursesPage.contextTypes = {
+ManageCoursePage.contextTypes = {
   router: PropTypes.object
 };
-
 
 function getCourseById(courses, id) {
   const course = courses.filter(course => course.id == id);
@@ -93,16 +111,9 @@ function mapStateToProps(state, ownProps) {
     course = getCourseById(state.courses, courseId);
   }
 
-  const authorsFormattedForDropdown = state.authors.map(author => {
-    return {
-      value: author.id,
-      text: author.firstName + ' ' + author.lastName
-    };
-  });
-
   return {
     course: course,
-    authors: authorsFormattedForDropdown
+    authors: authorsFormattedForDropdown(state.authors)
   };
 }
 
@@ -112,5 +123,5 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ManageCoursesPage);
+export default connect(mapStateToProps, mapDispatchToProps)(ManageCoursePage);
 
